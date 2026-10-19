@@ -1,0 +1,5 @@
+<div class="box"><h2><%= l(:label_csat_thank_you) %></h2>
+<p><%= l(:text_csat_recorded_as) %> <strong><%= l("label_csat_rating_#{@response.rating_name}") %></strong>.</p>
+<% if @allow_comment %><%= form_tag redmine_csat_comment_path(params[:token]), method: :post do %>
+<p><%= label_tag :comment, l(:field_csat_comment) %><br><%= text_area_tag :comment, @response.comment, rows: 5, maxlength: 10_000 %></p>
+<p><%= submit_tag l(:button_save_comment) %></p><% end %><% end %></div>

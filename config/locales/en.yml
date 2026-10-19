@@ -1,0 +1,28 @@
+en:
+  label_redmine_csat: Customer satisfaction
+  label_csat_score: CSAT score
+  label_csat_response_rate: Response rate
+  label_csat_sent: Requests sent
+  label_csat_responses: Responses
+  label_csat_thank_you: Thank you
+  label_csat_rating_poor: Poor
+  label_csat_rating_okay: OK
+  label_csat_rating_great: Great
+  text_csat_recorded_as: Your feedback has been recorded as
+  notice_csat_comment_saved: Your comment has been saved.
+  button_save_comment: Save comment
+  field_csat_enabled: Enable CSAT
+  field_csat_customer_role: Customer role
+  field_csat_owner_email_field: Fallback owner-email issue field
+  field_csat_trigger_statuses: Trigger statuses
+  field_csat_cooldown_days: Minimum days between requests to the same email
+  field_csat_minimum_issue_age_hours: Minimum issue age in hours
+  field_csat_rating_prompt: Rating prompt
+  field_csat_mail_subject: Email subject
+  field_csat_allow_comment: Allow optional comments
+  field_csat_create_follow_up: Create follow-up issue for Poor
+  field_csat_follow_up_tracker: Follow-up tracker
+  field_csat_follow_up_assignee: Follow-up assignee
+  field_csat_rating: Rating
+  field_csat_customer: Customer
+  field_csat_comment: Optional comment

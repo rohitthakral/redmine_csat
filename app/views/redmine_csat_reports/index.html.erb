@@ -1,0 +1,6 @@
+<h2><%= l(:label_redmine_csat) %></h2>
+<div class="box"><p><strong><%= l(:label_csat_score) %>:</strong> <%= @csat %>% &nbsp; <strong><%= l(:label_csat_response_rate) %>:</strong> <%= @response_rate %>% &nbsp; <strong><%= l(:label_csat_sent) %>:</strong> <%= @total_sent %> &nbsp; <strong><%= l(:label_csat_responses) %>:</strong> <%= @total_responded %></p>
+<p>&#128578; <%= @counts[3].to_i %> &nbsp; &#128528; <%= @counts[2].to_i %> &nbsp; &#128577; <%= @counts[1].to_i %></p></div>
+<table class="list"><thead><tr><th><%= l(:field_issue) %></th><th><%= l(:field_csat_rating) %></th><th><%= l(:field_csat_customer) %></th><th><%= l(:field_csat_comment) %></th><th><%= l(:field_created_on) %></th></tr></thead><tbody>
+<% @responses.each do |r| %><tr class="<%= cycle('odd','even') %>"><td><%= link_to_issue(r.issue) %></td><td><%= l("label_csat_rating_#{r.rating_name}") %></td><td><%= r.customer_user&.name || r.request.recipient_email %></td><td><%= h(r.comment) %></td><td><%= format_time(r.responded_at) %></td></tr><% end %>
+</tbody></table>
