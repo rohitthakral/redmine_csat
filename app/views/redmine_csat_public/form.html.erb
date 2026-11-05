@@ -1,0 +1,58 @@
+<% html_title l(:label_redmine_csat) %>
+<% content_for :header_tags do %>
+<style>
+  .csat-ratings { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; padding: 0; border: 0; }
+  .csat-ratings label { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px;
+                        border: 2px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 1.1em; }
+  .csat-ratings input { margin: 0; }
+  .csat-ratings input:checked + span { font-weight: bold; }
+  .csat-ratings label:has(input:checked) { border-color: #628db6; background: #eef4fa; }
+  #csat-form textarea { width: 100%; max-width: 40em; box-sizing: border-box; }
+</style>
+<% end %>
+
+<div class="box">
+  <h2><%= @prompt %></h2>
+  <p><%= l(:text_csat_regarding_issue, id: @csat_request.issue_id, subject: @csat_request.issue.subject) %></p>
+
+  <% if @csat_response %>
+    <p>
+      <%= l(:text_csat_recorded_as) %>
+      <strong><%= @labels[@csat_response.rating_name.to_sym] %></strong>.
+      <% if @editable %>
+        <%= l(:text_csat_can_change_until, time: format_time(@csat_response.editable_until)) %>
+      <% end %>
+    </p>
+  <% end %>
+
+  <% if @editable %>
+    <%= form_tag redmine_csat_submit_path(token: params[:token]), method: :post, id: 'csat-form' do %>
+      <fieldset class="csat-ratings">
+        <legend class="hidden"><%= l(:field_csat_rating) %></legend>
+        <% [['great', '&#128578;'], ['okay', '&#128528;'], ['poor', '&#128577;']].each do |name, icon| %>
+          <label>
+            <%= radio_button_tag 'rating', name, @selected_rating == name, required: true %>
+            <span><%= icon.html_safe %> <%= @labels[name.to_sym] %></span>
+          </label>
+        <% end %>
+      </fieldset>
+      <% if @allow_comment %>
+        <p>
+          <%= label_tag :comment, l(:field_csat_comment) %><br>
+          <%= text_area_tag :comment, @csat_response&.comment, rows: 5,
+                            maxlength: RedmineCsatResponse::COMMENT_LIMIT %>
+        </p>
+      <% end %>
+      <p><%= submit_tag l(:button_csat_submit) %></p>
+    <% end %>
+    <% if @auto_submit %>
+      <%= javascript_tag "document.getElementById('csat-form').submit();" %>
+    <% end %>
+  <% else %>
+    <% if @csat_response&.comment.present? %>
+      <p><strong><%= l(:field_csat_comment) %>:</strong></p>
+      <div><%= simple_format(h(@csat_response.comment)) %></div>
+    <% end %>
+    <p><em><%= l(:text_csat_thank_you) %></em></p>
+  <% end %>
+</div>

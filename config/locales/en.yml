@@ -1,28 +1,72 @@
 en:
   label_redmine_csat: Customer satisfaction
+  project_module_redmine_csat: Customer satisfaction
+  permission_view_csat_reports: View CSAT reports
+
   label_csat_score: CSAT score
   label_csat_response_rate: Response rate
-  label_csat_sent: Requests sent
+  label_csat_sent: Surveys delivered
   label_csat_responses: Responses
-  label_csat_thank_you: Thank you
   label_csat_rating_poor: Poor
   label_csat_rating_okay: OK
   label_csat_rating_great: Great
+  label_csat_follow_up_failed: Failed
+  label_csat_same_project: Same project as the rated issue
+  label_csat_same_tracker: Same tracker as the rated issue
+  label_csat_default_author: "Default (assignee of the rated issue, else first administrator)"
+  label_csat_settings_general: General
+  label_csat_settings_recipients: Recipients
+  label_csat_settings_survey: Survey email and page
+  label_csat_settings_follow_up: Follow-up issues for Poor ratings
+  label_csat_settings_privacy: Data retention
+
+  text_csat_regarding_issue: "Regarding issue #%{id}: %{subject}"
   text_csat_recorded_as: Your feedback has been recorded as
-  notice_csat_comment_saved: Your comment has been saved.
-  button_save_comment: Save comment
+  text_csat_can_change_until: "You can change your answer until %{time}."
+  text_csat_thank_you: Thank you for your feedback.
+  text_csat_link_expired: This survey link has expired.
+  text_csat_survey_closed: This survey is no longer available.
+  text_csat_score_definition: "CSAT score is the percentage of responses rated Great. Response rate is responses divided by surveys delivered."
+  text_csat_period_filter: The dates filter on when the survey was sent.
+  text_csat_follow_up_errors:
+    one: "1 follow-up issue could not be created. Hover over \"Failed\" for the reason."
+    other: "%{count} follow-up issues could not be created. Hover over \"Failed\" for the reason."
+  text_csat_deliver_async_info: Only enable this if Redmine has a reliable Active Job queue backend.
+  text_csat_auto_submit_info: "Records the rating as soon as the page opens, without the customer pressing Submit. Some email security scanners run JavaScript, so this can record ratings the customer never gave."
+  text_csat_zero_means_never: 0 means never.
+  text_csat_assignee_info: Only users with an assignable role in some project are listed. The follow-up is left unassigned if this user cannot be assigned in the follow-up project.
+  text_csat_retention_info: "0 keeps survey data forever. Applied by rake redmine_csat:purge."
+
+  notice_csat_saved: Thank you, your feedback has been saved.
+  error_csat_locked: This answer can no longer be changed.
+  error_csat_choose_rating: Please choose a rating.
+  button_csat_submit: Submit
+
   field_csat_enabled: Enable CSAT
   field_csat_customer_role: Customer role
   field_csat_owner_email_field: Fallback owner-email issue field
   field_csat_trigger_statuses: Trigger statuses
-  field_csat_cooldown_days: Minimum days between requests to the same email
+  field_csat_cooldown_days: Minimum days between surveys to the same email
   field_csat_minimum_issue_age_hours: Minimum issue age in hours
+  field_csat_deliver_async: Send emails in the background
   field_csat_rating_prompt: Rating prompt
+  field_csat_labels: "Rating labels (Great, OK, Poor)"
   field_csat_mail_subject: Email subject
+  field_csat_from_address: Sender address
   field_csat_allow_comment: Allow optional comments
-  field_csat_create_follow_up: Create follow-up issue for Poor
+  field_csat_auto_submit_vote: Submit the rating automatically
+  field_csat_response_edit_window_hours: Hours the customer can change their answer
+  field_csat_link_validity_days: Days a survey link stays valid
+  field_csat_create_follow_up: Create a follow-up issue for Poor
+  field_csat_follow_up_project: Follow-up project
   field_csat_follow_up_tracker: Follow-up tracker
   field_csat_follow_up_assignee: Follow-up assignee
+  field_csat_follow_up_author: Follow-up author
+  field_csat_follow_up_private: Make follow-up issues private
+  field_csat_ip_hash_retention_days: Days to keep hashed IP addresses
+  field_csat_data_retention_days: Days to keep survey data
   field_csat_rating: Rating
   field_csat_customer: Customer
-  field_csat_comment: Optional comment
+  field_csat_comment: Comment (optional)
+  field_csat_responded_on: Responded
+  field_csat_follow_up_issue: Follow-up

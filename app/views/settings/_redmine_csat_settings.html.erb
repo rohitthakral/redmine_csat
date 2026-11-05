@@ -1,12 +1,135 @@
-<p><%= label_tag 'settings_enabled', l(:field_csat_enabled) %><%= hidden_field_tag 'settings[enabled]', '0' %><%= check_box_tag 'settings[enabled]', '1', @settings['enabled'] == '1' %></p>
-<p><%= label_tag 'settings_customer_role_id', l(:field_csat_customer_role) %><%= select_tag 'settings[customer_role_id]', options_for_select([[l(:label_none),'']] + Role.sorted.map{|r|[r.name,r.id]}, @settings['customer_role_id']) %></p>
-<p><%= label_tag 'settings_owner_email_custom_field_id', l(:field_csat_owner_email_field) %><%= select_tag 'settings[owner_email_custom_field_id]', options_for_select([[l(:label_none),'']] + IssueCustomField.sorted.map{|f|[f.name,f.id]}, @settings['owner_email_custom_field_id']) %></p>
-<p><%= label_tag 'settings_trigger_status_ids', l(:field_csat_trigger_statuses) %><%= select_tag 'settings[trigger_status_ids][]', options_from_collection_for_select(IssueStatus.sorted,:id,:name,Array(@settings['trigger_status_ids']).map(&:to_i)), multiple:true, size:6 %></p>
-<p><%= label_tag 'settings_cooldown_days', l(:field_csat_cooldown_days) %><%= number_field_tag 'settings[cooldown_days]', @settings['cooldown_days'], min:0 %></p>
-<p><%= label_tag 'settings_minimum_issue_age_hours', l(:field_csat_minimum_issue_age_hours) %><%= number_field_tag 'settings[minimum_issue_age_hours]', @settings['minimum_issue_age_hours'], min:0 %></p>
-<p><%= label_tag 'settings_rating_prompt', l(:field_csat_rating_prompt) %><%= text_field_tag 'settings[rating_prompt]', @settings['rating_prompt'], size:70 %></p>
-<p><%= label_tag 'settings_mail_subject', l(:field_csat_mail_subject) %><%= text_field_tag 'settings[mail_subject]', @settings['mail_subject'], size:70 %><em class="info">%{issue_id}, %{issue_subject}, %{project}</em></p>
-<p><%= label_tag 'settings_allow_comment', l(:field_csat_allow_comment) %><%= hidden_field_tag 'settings[allow_comment]', '0' %><%= check_box_tag 'settings[allow_comment]', '1', @settings['allow_comment']=='1' %></p>
-<p><%= label_tag 'settings_create_follow_up_on_poor', l(:field_csat_create_follow_up) %><%= hidden_field_tag 'settings[create_follow_up_on_poor]', '0' %><%= check_box_tag 'settings[create_follow_up_on_poor]', '1', @settings['create_follow_up_on_poor']=='1' %></p>
-<p><%= label_tag 'settings_follow_up_tracker_id', l(:field_csat_follow_up_tracker) %><%= select_tag 'settings[follow_up_tracker_id]', options_for_select([[l(:label_none),'']] + Tracker.sorted.map{|t|[t.name,t.id]}, @settings['follow_up_tracker_id']) %></p>
-<p><%= label_tag 'settings_follow_up_assignee_id', l(:field_csat_follow_up_assignee) %><%= select_tag 'settings[follow_up_assignee_id]', options_for_select([[l(:label_none),'']] + User.active.sorted.map{|u|[u.name,u.id]}, @settings['follow_up_assignee_id']) %></p>
+<%
+  csat_settings = RedmineCsat::Settings::DEFAULTS.merge(@settings.to_h.stringify_keys)
+  checkbox = lambda do |key|
+    hidden_field_tag("settings[#{key}]", '0', id: nil) +
+      check_box_tag("settings[#{key}]", '1', csat_settings[key].to_s == '1', id: "settings_#{key}")
+  end
+  # Only users who can be assigned issues somewhere are offered as assignees,
+  # which keeps the list short on large installations.
+  assignable_user_ids = Member.joins(:roles).where(roles: { assignable: true }).select(:user_id)
+  assignable_users = User.active.where(id: assignable_user_ids).sorted.to_a
+  active_users = User.active.where(id: Member.select(:user_id)).or(User.active.where(admin: true)).sorted.to_a
+%>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_general) %></legend>
+  <p><%= label_tag 'settings_enabled', l(:field_csat_enabled) %><%= checkbox.call('enabled') %></p>
+  <p>
+    <%= label_tag 'settings_trigger_status_ids', l(:field_csat_trigger_statuses) %>
+    <%= hidden_field_tag 'settings[trigger_status_ids][]', '', id: nil %>
+    <%= select_tag 'settings[trigger_status_ids][]',
+                   options_from_collection_for_select(IssueStatus.sorted, :id, :name,
+                                                      Array(csat_settings['trigger_status_ids']).map(&:to_i)),
+                   multiple: true, size: 6, id: 'settings_trigger_status_ids' %>
+  </p>
+  <p>
+    <%= label_tag 'settings_minimum_issue_age_hours', l(:field_csat_minimum_issue_age_hours) %>
+    <%= number_field_tag 'settings[minimum_issue_age_hours]', csat_settings['minimum_issue_age_hours'], min: 0 %>
+  </p>
+  <p>
+    <%= label_tag 'settings_deliver_async', l(:field_csat_deliver_async) %><%= checkbox.call('deliver_async') %>
+    <em class="info"><%= l(:text_csat_deliver_async_info) %></em>
+  </p>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_recipients) %></legend>
+  <p>
+    <%= label_tag 'settings_customer_role_id', l(:field_csat_customer_role) %>
+    <%= select_tag 'settings[customer_role_id]',
+                   options_for_select([[l(:label_none), '']] + Role.givable.map { |r| [r.name, r.id] },
+                                      csat_settings['customer_role_id'].to_s) %>
+  </p>
+  <p>
+    <%= label_tag 'settings_owner_email_custom_field_id', l(:field_csat_owner_email_field) %>
+    <%= select_tag 'settings[owner_email_custom_field_id]',
+                   options_for_select([[l(:label_none), '']] + IssueCustomField.sorted.map { |f| [f.name, f.id] },
+                                      csat_settings['owner_email_custom_field_id'].to_s) %>
+  </p>
+  <p>
+    <%= label_tag 'settings_cooldown_days', l(:field_csat_cooldown_days) %>
+    <%= number_field_tag 'settings[cooldown_days]', csat_settings['cooldown_days'], min: 0 %>
+  </p>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_survey) %></legend>
+  <p>
+    <%= label_tag 'settings_mail_subject', l(:field_csat_mail_subject) %>
+    <%= text_field_tag 'settings[mail_subject]', csat_settings['mail_subject'], size: 70 %>
+    <em class="info">%{issue_id}, %{issue_subject}, %{project}</em>
+  </p>
+  <p>
+    <%= label_tag 'settings_from_address', l(:field_csat_from_address) %>
+    <%= text_field_tag 'settings[from_address]', csat_settings['from_address'], size: 50, placeholder: Setting.mail_from %>
+  </p>
+  <p>
+    <%= label_tag 'settings_rating_prompt', l(:field_csat_rating_prompt) %>
+    <%= text_field_tag 'settings[rating_prompt]', csat_settings['rating_prompt'], size: 70 %>
+  </p>
+  <p>
+    <%= label_tag 'settings_great_label', l(:field_csat_labels) %>
+    <%= text_field_tag 'settings[great_label]', csat_settings['great_label'], size: 15 %>
+    <%= text_field_tag 'settings[okay_label]', csat_settings['okay_label'], size: 15 %>
+    <%= text_field_tag 'settings[poor_label]', csat_settings['poor_label'], size: 15 %>
+  </p>
+  <p><%= label_tag 'settings_allow_comment', l(:field_csat_allow_comment) %><%= checkbox.call('allow_comment') %></p>
+  <p>
+    <%= label_tag 'settings_auto_submit_vote', l(:field_csat_auto_submit_vote) %><%= checkbox.call('auto_submit_vote') %>
+    <em class="info"><%= l(:text_csat_auto_submit_info) %></em>
+  </p>
+  <p>
+    <%= label_tag 'settings_response_edit_window_hours', l(:field_csat_response_edit_window_hours) %>
+    <%= number_field_tag 'settings[response_edit_window_hours]', csat_settings['response_edit_window_hours'], min: 0 %>
+  </p>
+  <p>
+    <%= label_tag 'settings_link_validity_days', l(:field_csat_link_validity_days) %>
+    <%= number_field_tag 'settings[link_validity_days]', csat_settings['link_validity_days'], min: 0 %>
+    <em class="info"><%= l(:text_csat_zero_means_never) %></em>
+  </p>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_follow_up) %></legend>
+  <p><%= label_tag 'settings_create_follow_up_on_poor', l(:field_csat_create_follow_up) %><%= checkbox.call('create_follow_up_on_poor') %></p>
+  <p>
+    <%= label_tag 'settings_follow_up_project_id', l(:field_csat_follow_up_project) %>
+    <%= select_tag 'settings[follow_up_project_id]',
+                   options_for_select([[l(:label_csat_same_project), '']] + Project.active.sorted.map { |p| [p.name, p.id] },
+                                      csat_settings['follow_up_project_id'].to_s) %>
+  </p>
+  <p>
+    <%= label_tag 'settings_follow_up_tracker_id', l(:field_csat_follow_up_tracker) %>
+    <%= select_tag 'settings[follow_up_tracker_id]',
+                   options_for_select([[l(:label_csat_same_tracker), '']] + Tracker.sorted.map { |t| [t.name, t.id] },
+                                      csat_settings['follow_up_tracker_id'].to_s) %>
+  </p>
+  <p>
+    <%= label_tag 'settings_follow_up_assignee_id', l(:field_csat_follow_up_assignee) %>
+    <%= select_tag 'settings[follow_up_assignee_id]',
+                   options_for_select([[l(:label_none), '']] + assignable_users.map { |u| [u.name, u.id] },
+                                      csat_settings['follow_up_assignee_id'].to_s) %>
+    <em class="info"><%= l(:text_csat_assignee_info) %></em>
+  </p>
+  <p>
+    <%= label_tag 'settings_follow_up_author_id', l(:field_csat_follow_up_author) %>
+    <%= select_tag 'settings[follow_up_author_id]',
+                   options_for_select([[l(:label_csat_default_author), '']] + active_users.map { |u| [u.name, u.id] },
+                                      csat_settings['follow_up_author_id'].to_s) %>
+  </p>
+  <p><%= label_tag 'settings_follow_up_private', l(:field_csat_follow_up_private) %><%= checkbox.call('follow_up_private') %></p>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_privacy) %></legend>
+  <p>
+    <%= label_tag 'settings_ip_hash_retention_days', l(:field_csat_ip_hash_retention_days) %>
+    <%= number_field_tag 'settings[ip_hash_retention_days]', csat_settings['ip_hash_retention_days'], min: 0 %>
+    <em class="info"><%= l(:text_csat_zero_means_never) %></em>
+  </p>
+  <p>
+    <%= label_tag 'settings_data_retention_days', l(:field_csat_data_retention_days) %>
+    <%= number_field_tag 'settings[data_retention_days]', csat_settings['data_retention_days'], min: 0 %>
+    <em class="info"><%= l(:text_csat_retention_info) %></em>
+  </p>
+</fieldset>

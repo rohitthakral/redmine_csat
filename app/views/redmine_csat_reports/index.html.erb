@@ -1,6 +1,80 @@
+<% html_title l(:label_redmine_csat) %>
 <h2><%= l(:label_redmine_csat) %></h2>
-<div class="box"><p><strong><%= l(:label_csat_score) %>:</strong> <%= @csat %>% &nbsp; <strong><%= l(:label_csat_response_rate) %>:</strong> <%= @response_rate %>% &nbsp; <strong><%= l(:label_csat_sent) %>:</strong> <%= @total_sent %> &nbsp; <strong><%= l(:label_csat_responses) %>:</strong> <%= @total_responded %></p>
-<p>&#128578; <%= @counts[3].to_i %> &nbsp; &#128528; <%= @counts[2].to_i %> &nbsp; &#128577; <%= @counts[1].to_i %></p></div>
-<table class="list"><thead><tr><th><%= l(:field_issue) %></th><th><%= l(:field_csat_rating) %></th><th><%= l(:field_csat_customer) %></th><th><%= l(:field_csat_comment) %></th><th><%= l(:field_created_on) %></th></tr></thead><tbody>
-<% @responses.each do |r| %><tr class="<%= cycle('odd','even') %>"><td><%= link_to_issue(r.issue) %></td><td><%= l("label_csat_rating_#{r.rating_name}") %></td><td><%= r.customer_user&.name || r.request.recipient_email %></td><td><%= h(r.comment) %></td><td><%= format_time(r.responded_at) %></td></tr><% end %>
-</tbody></table>
+
+<%= form_tag redmine_csat_report_path(@project), method: :get, id: 'csat-filters' do %>
+  <fieldset id="filters" class="collapsible">
+    <legend><%= l(:label_filter_plural) %></legend>
+    <p>
+      <%= label_tag :from, l(:label_date_from) %>
+      <%= date_field_tag :from, @from, size: 10 %><%= calendar_for('from') %>
+      <%= label_tag :to, l(:label_date_to) %>
+      <%= date_field_tag :to, @to, size: 10 %><%= calendar_for('to') %>
+      <% if @project.descendants.active.any? %>
+        <%= hidden_field_tag :with_subprojects, '0', id: nil %>
+        <label><%= check_box_tag :with_subprojects, '1', @with_subprojects %> <%= l(:label_subproject_plural) %></label>
+      <% end %>
+      <%= submit_tag l(:button_apply), name: nil %>
+    </p>
+    <p><em class="info"><%= l(:text_csat_period_filter) %></em></p>
+  </fieldset>
+<% end %>
+
+<div class="box">
+  <p>
+    <strong><%= l(:label_csat_score) %>:</strong> <%= @csat %>%
+    &nbsp; <strong><%= l(:label_csat_response_rate) %>:</strong> <%= @response_rate %>%
+    &nbsp; <strong><%= l(:label_csat_sent) %>:</strong> <%= @total_sent %>
+    &nbsp; <strong><%= l(:label_csat_responses) %>:</strong> <%= @total_responded %>
+  </p>
+  <p>
+    &#128578; <%= @counts[RedmineCsatResponse::GREAT].to_i %>
+    &nbsp; &#128528; <%= @counts[RedmineCsatResponse::OKAY].to_i %>
+    &nbsp; &#128577; <%= @counts[RedmineCsatResponse::POOR].to_i %>
+  </p>
+  <p><em class="info"><%= l(:text_csat_score_definition) %></em></p>
+  <% if @follow_up_errors.positive? %>
+    <p class="warning"><%= l(:text_csat_follow_up_errors, count: @follow_up_errors) %></p>
+  <% end %>
+</div>
+
+<% if @responses.empty? %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% else %>
+  <div class="autoscroll">
+    <table class="list">
+      <thead>
+        <tr>
+          <th><%= l(:field_issue) %></th>
+          <th><%= l(:field_csat_rating) %></th>
+          <th><%= l(:field_csat_customer) %></th>
+          <th><%= l(:field_csat_comment) %></th>
+          <th><%= l(:field_csat_responded_on) %></th>
+          <th><%= l(:field_csat_follow_up_issue) %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @responses.each do |r| %>
+          <tr class="<%= cycle('odd', 'even') %>">
+            <td><%= r.issue ? link_to_issue(r.issue) : "##{r.issue_id}" %></td>
+            <td><%= l("label_csat_rating_#{r.rating_name}") %></td>
+            <td><%= r.customer_user&.name || r.csat_request&.recipient_email %></td>
+            <td><%= simple_format(h(r.comment)) if r.comment.present? %></td>
+            <td><%= format_time(r.responded_at) %></td>
+            <td>
+              <% if r.follow_up_issue&.visible? %>
+                <%= link_to_issue(r.follow_up_issue, subject: false) %>
+              <% elsif r.follow_up_error.present? %>
+                <span class="icon icon-warning" title="<%= r.follow_up_error %>"><%= l(:label_csat_follow_up_failed) %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <span class="pagination"><%= pagination_links_full @response_pages, @total_responded %></span>
+<% end %>
+
+<% other_formats_links do |f| %>
+  <%= f.link_to_with_query_parameters 'CSV' %>
+<% end %>

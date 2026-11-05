@@ -1,7 +1,7 @@
 <%= @prompt %>
 
-<%= @labels[:poor] %>: <%= @vote_urls['poor'] %>
-<%= @labels[:okay] %>: <%= @vote_urls['okay'] %>
 <%= @labels[:great] %>: <%= @vote_urls['great'] %>
+<%= @labels[:okay] %>: <%= @vote_urls['okay'] %>
+<%= @labels[:poor] %>: <%= @vote_urls['poor'] %>
 
-Regarding issue #<%= @issue.id %>: <%= @issue.subject %>
+<%= l(:text_csat_regarding_issue, id: @issue.id, subject: @issue.subject) %>

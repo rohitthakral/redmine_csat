@@ -1,68 +1,353 @@
-# Redmine CSAT MVP 0.1.0
+# Redmine CSAT
 
-Standalone one-click customer satisfaction plugin targeting Redmine 6.1.2.
+Customer satisfaction (CSAT) surveys for Redmine issues. When an issue moves
+into a status you choose (normally *Closed*), the customer gets a short email
+asking how their experience was: **Great**, **OK** or **Poor**. Answers appear
+in a per-project report, and Poor answers can open a follow-up issue
+automatically.
 
-## Features
+- **Version:** 0.2.0
+- **Requires:** Redmine 6.1.2 or later (Rails 7.2, Ruby 3.2+)
+- **Licence:** see `LICENSE`
 
-- Dispatches on transition into configured issue statuses.
-- Enabled per project through the `Customer satisfaction` project module.
-- Resolves the customer from a configured Redmine Customer role, then falls back to an issue custom field such as `owner-email`.
-- Uses normalised email suppression with a configurable cooldown, default 14 days.
-- Records the first Poor, OK or Great link selection immediately.
-- Accepts an optional comment after the rating is recorded.
-- Includes project-level CSAT and response-rate reporting.
-- Can create a separate follow-up issue for Poor feedback.
-- Stores a SHA-256 digest rather than the raw survey token.
+## Contents
 
-## Install
+1. [How it works](#how-it-works)
+2. [Installation](#installation)
+3. [Upgrading from 0.1.0](#upgrading-from-010)
+4. [Configuration](#configuration)
+5. [Who receives the survey](#who-receives-the-survey)
+6. [The project report](#the-project-report)
+7. [Data retention and privacy](#data-retention-and-privacy)
+8. [Testing](#testing)
+9. [Troubleshooting](#troubleshooting)
+10. [Uninstalling](#uninstalling)
 
-Copy this directory to `REDMINE_ROOT/plugins/redmine_csat`, then run:
+## How it works
+
+1. An issue changes into one of the configured **trigger statuses**.
+2. The plugin finds the customer (see [Who receives the survey](#who-receives-the-survey))
+   and checks that this is allowed: the module is enabled, there is no earlier
+   survey for this issue, the issue is old enough, and the email address is
+   not in its cooldown period.
+3. One email is sent with three buttons: Great, OK and Poor. Each button is a
+   unique link. Only a SHA-256 digest of the link token is stored.
+4. Clicking a button opens a page with that rating pre-selected and an optional
+   comment box. **The rating is recorded when the customer presses Submit.**
+   Opening the link alone records nothing. This matters because email security
+   scanners (Microsoft Defender Safe Links, Mimecast, Proofpoint and others)
+   open every link in a message before the recipient sees it.
+5. The customer can change the rating or comment for a limited time (24 hours
+   by default). After that, the answer is locked.
+6. If enabled, a **Poor** rating creates one private follow-up issue. Later
+   changes to the rating or comment are added to that issue as notes. No
+   further issues are created.
+
+Each issue is surveyed at most once, even if it is reopened and closed again.
+
+## Installation
+
+### 1. Get the code
+
+Put the plugin in Redmine's `plugins` directory. The directory **must** be
+named `redmine_csat`.
 
 ```bash
-bundle exec rake redmine:plugins:migrate RAILS_ENV=production
+cd /path/to/redmine/plugins
 ```
 
-Restart Redmine.
+```bash
+git clone https://github.com/rohitthakral/redmine_csat.git redmine_csat
+```
 
-## Configure
+Or copy or unpack a release into `/path/to/redmine/plugins/redmine_csat`.
 
-1. Open **Administration > Plugins > Redmine CSAT > Configure**.
-2. Choose the Customer role.
-3. Choose the fallback issue custom field, normally `owner-email`.
-4. Select one or more trigger statuses, normally Closed.
-5. Set the cooldown in days.
-6. In each eligible project, enable **Customer satisfaction** under **Settings > Modules**.
-7. Grant internal roles the **View CSAT reports** permission.
-8. Verify Redmine's **Host name and path** and **Protocol** settings because they are used in public survey links.
+### 2. Run the database migrations
 
-## Recipient rules
+From the Redmine root directory:
 
-1. Look for a directly related active Redmine user with the configured Customer role. The issue author is preferred where several directly related customer users exist.
-2. If no unambiguous customer user is found, use the selected issue custom field.
-3. If no valid email is available, skip the request.
-4. Cooldown is checked against the normalised email regardless of its source.
+```bash
+cd /path/to/redmine
+```
 
-The plugin does not survey every customer-role member of a project.
+```bash
+bundle exec rake redmine:plugins:migrate NAME=redmine_csat RAILS_ENV=production
+```
 
-## Test checklist
+The plugin has no extra gem dependencies, so `bundle install` is not needed.
 
-- Customer-role issue author receives one request after a configured status transition.
-- An issue with no matching user uses `owner-email`.
-- Another issue for the same email during cooldown is suppressed.
-- A rating is recorded on the first link selection.
-- A later selection does not replace that first response.
-- Optional comment saves successfully.
-- Poor feedback creates a follow-up only when configured.
-- Users without the report permission cannot access the project report.
+### 3. Restart Redmine
 
-## Production note
+Restart the application server (Puma, Passenger, Unicorn and so on), for example:
 
-Install and validate in staging first. Email is sent synchronously after the issue transaction commits. If your production Redmine uses a validated Active Job backend, change `deliver_now` in `SurveyDispatcher` to `deliver_later`.
+```bash
+touch tmp/restart.txt
+```
 
-## Uninstall
+### 4. Check the installation
 
-Back up the database, then run:
+Go to **Administration → Plugins**. *Redmine CSAT* should be listed with
+version 0.2.0 and a **Configure** link.
+
+### 5. Check Redmine's email and URL settings
+
+The survey uses Redmine's normal email delivery (`config/configuration.yml`)
+and builds links from Redmine's own settings. Under **Administration →
+Settings → General**, check:
+
+- **Host name and path**, for example `support.example.com` or
+  `example.com/redmine`. Sub-path installs are supported.
+- **Protocol**: `https` in production.
+
+If these are wrong, the links in survey emails will not work.
+
+## Upgrading from 0.1.0
+
+0.2.0 adds a migration and changes the survey links. To upgrade:
+
+1. Back up the database.
+2. Replace the plugin directory with the new version.
+3. Run the migration:
+
+```bash
+bundle exec rake redmine:plugins:migrate NAME=redmine_csat RAILS_ENV=production
+```
+
+4. Restart Redmine.
+5. Open **Administration → Plugins → Redmine CSAT → Configure**, review the
+   new settings, and press **Apply** once to save them.
+
+The migration:
+
+- marks existing surveys as delivered;
+- removes survey rows for issues that no longer exist;
+- removes duplicate surveys for the same issue (keeping the one with an answer,
+  or the oldest);
+- enforces one survey per issue in the database.
+
+Links in emails already sent keep working. They now show the confirmation
+page instead of recording the vote straight away.
+
+**Note:** in 0.1.0 the issue hook was registered in a way that does not run
+when Redmine 6 boots in production, so 0.1.0 may never have sent a survey.
+0.2.0 fixes this.
+
+## Configuration
+
+There are four steps: global settings, per-project module, permissions, and
+optionally the customer role and custom field.
+
+### Step 1: Prepare how customers are identified
+
+Use one or both of these:
+
+- **Customer role (recommended when customers log in to Redmine).** Create a
+  role under **Administration → Roles and permissions**, for example
+  *Customer*, and add your customer users to projects with that role.
+- **Owner-email custom field (for customers without Redmine accounts).**
+  Create an issue custom field under **Administration → Custom fields → New
+  custom field → Issues**:
+  - Format: *Text* (or *Link*)
+  - Name: for example `owner-email`
+  - Trackers and projects: wherever it is needed
+
+  Fill in the customer's address on each issue. If the field holds several
+  addresses (separated by commas, semicolons or spaces), the first valid one
+  is used.
+
+### Step 2: Global settings
+
+Go to **Administration → Plugins → Redmine CSAT → Configure**.
+
+**General**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Enable CSAT | on | Master switch. When off, nothing is sent and survey links stop working. |
+| Trigger statuses | none | Statuses that send a survey when an issue moves into them. Usually *Closed* and/or *Resolved*. **No survey is sent until at least one is selected.** |
+| Minimum issue age in hours | 0 | Skip issues created less than this many hours ago (for example quick spam or duplicates). |
+| Send emails in the background | off | Uses `deliver_later`. Only enable this if Redmine has a reliable Active Job backend (Sidekiq, GoodJob and so on). Redmine's default in-process queue loses jobs on restart. |
+
+**Recipients**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Customer role | none | The role that identifies customers. |
+| Fallback owner-email issue field | none | Issue custom field used when no customer user is found. |
+| Minimum days between surveys to the same email | 14 | One address receives at most one survey in this period, whichever issue it came from. 0 turns this off. |
+
+**Survey email and page**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Email subject | `How was your experience? Issue #%{issue_id}` | Placeholders: `%{issue_id}`, `%{issue_subject}`, `%{project}`. Use `%%` for a literal percent sign. |
+| Sender address | Redmine's *Emission email address* | `From:` address for survey emails. |
+| Rating prompt | `How was your experience with us?` | Heading in the email and on the survey page. |
+| Rating labels | Great / OK / Poor | Button labels. |
+| Allow optional comments | on | Shows a comment box on the survey page. |
+| Submit the rating automatically | off | Submits the form with JavaScript as soon as the page opens. This saves the customer one click, but some security scanners run JavaScript and could submit false ratings. Leave it off unless you have checked this with your customers' mail systems. |
+| Hours the customer can change their answer | 24 | After this, the answer is locked. 0 locks it immediately. |
+| Days a survey link stays valid | 60 | Unanswered links stop working after this. Answered surveys can still be viewed. 0 means links never expire. |
+
+**Follow-up issues for Poor ratings**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Create a follow-up issue for Poor | off | Creates one issue per Poor answer. It is linked to the rated issue with a *related to* relation when cross-project relations allow it. |
+| Follow-up project | same project | Use a separate internal project (for example *Customer success*) so customers never see follow-ups. |
+| Follow-up tracker | same tracker | Used when enabled in the follow-up project; otherwise the rated issue's tracker, then the project's first tracker. |
+| Follow-up assignee | none | Must be assignable in the follow-up project. If not, the issue is created unassigned and a warning is logged. |
+| Follow-up author | assignee of the rated issue, else the first administrator | User shown as the author of follow-ups and their notes. |
+| Make follow-up issues private | on | Recommended when follow-ups go into the customer's own project. |
+
+Follow-up issues are never surveyed themselves. If one cannot be created (for
+example because of a required custom field or a missing tracker), the reason
+is logged and shown in the project report.
+
+**Data retention**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Days to keep hashed IP addresses | 90 | After this, the hashed IP address is cleared from answers. 0 keeps it. |
+| Days to keep survey data | 0 (forever) | Surveys and answers older than this are deleted. |
+
+Retention is applied by a rake task. See [Data retention and privacy](#data-retention-and-privacy).
+
+### Step 3: Enable the module in each project
+
+In each project that should send surveys, go to **Project → Settings →
+Modules**, tick **Customer satisfaction** and save. Subprojects need it
+enabled separately.
+
+### Step 4: Grant the report permission
+
+Under **Administration → Roles and permissions**, give **View CSAT reports**
+to the internal roles that should see results (for example *Manager*). Do
+**not** give it to the customer role: the report shows customer names, email
+addresses and comments.
+
+### Quick test
+
+1. Create a test issue in an enabled project. Make yourself (with a test
+   email address) the author with the customer role, or fill in the
+   owner-email field.
+2. Move the issue to a trigger status.
+3. Check that the email arrives. Click a button, add a comment and press
+   **Submit**.
+4. Open **Customer satisfaction** in the project menu and check that the
+   answer appears.
+
+## Who receives the survey
+
+1. Users directly related to the issue are checked: the author, the assignee
+   and watchers. Only active users who have the configured customer role in
+   the issue's project count.
+   - If exactly one matches, they receive the survey.
+   - If several match and the author is one of them, the author receives it.
+   - Otherwise, no customer user is chosen.
+2. If no customer user is chosen, the owner-email custom field is used.
+3. If neither gives a valid address, no survey is sent.
+4. The cooldown is checked against the normalised (lower-cased) address,
+   wherever it came from.
+
+The plugin never surveys every customer-role member of a project.
+
+Emails are sent in the recipient's Redmine language when they are a Redmine
+user, otherwise in Redmine's default language. The prompt and button labels
+always use the text from the settings.
+
+## The project report
+
+Open **Customer satisfaction** in the project menu. It needs the *View CSAT
+reports* permission.
+
+- **CSAT score:** the percentage of answers rated *Great*.
+- **Response rate:** answers divided by surveys delivered.
+- **Filters:** the *From* and *To* dates filter on when the survey was sent,
+  so the score and response rate describe the same surveys. You can also
+  include subprojects.
+- Only issues the current user can see are included, so private issues stay
+  private.
+- Follow-up issues are linked. Failed follow-ups are flagged; hover over the
+  flag to see the reason.
+- **CSV export:** use the *CSV* link at the bottom of the report.
+
+## Data retention and privacy
+
+- Survey links contain a random 256-bit token. Only its SHA-256 digest is
+  stored.
+- An HMAC of the respondent's IP address (keyed with Redmine's secret key) is
+  stored to help spot abuse. This still counts as personal data under GDPR.
+- Customer emails and comments are visible to anyone with *View CSAT
+  reports*.
+- With background delivery on, the raw token sits in the job queue until the
+  email is sent.
+
+To apply the retention settings, run this regularly (for example nightly from cron):
+
+```bash
+cd /path/to/redmine && bundle exec rake redmine_csat:purge RAILS_ENV=production
+```
+
+Example crontab entry:
+
+```bash
+15 3 * * * cd /path/to/redmine && bundle exec rake redmine_csat:purge RAILS_ENV=production >> log/redmine_csat_purge.log 2>&1
+```
+
+## Testing
+
+The tests use Redmine's own test setup and fixtures. From the Redmine root:
+
+```bash
+RAILS_ENV=test bundle exec rake db:create db:migrate redmine:plugins:migrate
+```
+
+```bash
+bundle exec rake redmine:plugins:test NAME=redmine_csat
+```
+
+## Troubleshooting
+
+**No survey email is sent.** Check `log/production.log` for lines starting
+with `[redmine_csat]`. Then check that:
+
+- the plugin is enabled and at least one trigger status is selected;
+- the project has the *Customer satisfaction* module enabled;
+- the issue really changed into the trigger status (editing an issue that is
+  already closed does not count);
+- the issue has not been surveyed before;
+- a customer can be found (customer role or owner-email field);
+- the address is not in its cooldown period;
+- Redmine can send email at all (**Administration → Settings → Email
+  notifications → Send a test email**).
+
+**Links in the email point to the wrong host.** Fix **Host name and path**
+and **Protocol** under **Administration → Settings → General**.
+
+**Every answer is Poor, or answers appear that nobody gave.** Check that
+*Submit the rating automatically* is off.
+
+**A follow-up was not created.** Hover over *Failed* in the report, or search
+the log for `follow-up`. The usual causes are:
+
+- a required custom field on the follow-up tracker;
+- the tracker is not enabled in the follow-up project;
+- no default issue priority is set.
+
+**A send failed.** If the email fails during a synchronous send, the survey
+record is removed. The issue is surveyed the next time it reaches a trigger
+status, and the cooldown is not used up. A background send that is still
+unconfirmed after one hour is treated the same way.
+
+## Uninstalling
+
+1. Back up the database.
+2. Remove the plugin's tables:
 
 ```bash
 bundle exec rake redmine:plugins:migrate NAME=redmine_csat VERSION=0 RAILS_ENV=production
 ```
+
+3. Delete `plugins/redmine_csat`.
+4. Restart Redmine.
