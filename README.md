@@ -16,12 +16,13 @@ automatically.
 2. [Installation](#installation)
 3. [Upgrading from 0.1.0](#upgrading-from-010)
 4. [Configuration](#configuration)
-5. [Who receives the survey](#who-receives-the-survey)
-6. [The project report](#the-project-report)
-7. [Data retention and privacy](#data-retention-and-privacy)
-8. [Testing](#testing)
-9. [Troubleshooting](#troubleshooting)
-10. [Uninstalling](#uninstalling)
+5. [Customising the survey email](#customising-the-survey-email)
+6. [Who receives the survey](#who-receives-the-survey)
+7. [The project report](#the-project-report)
+8. [Data retention and privacy](#data-retention-and-privacy)
+9. [Testing](#testing)
+10. [Troubleshooting](#troubleshooting)
+11. [Uninstalling](#uninstalling)
 
 ## How it works
 
@@ -176,14 +177,29 @@ Go to **Administration → Plugins → Redmine CSAT → Configure**.
 | Fallback owner-email issue field | none | Issue custom field used when no customer user is found. |
 | Minimum days between surveys to the same email | 14 | One address receives at most one survey in this period, whichever issue it came from. 0 turns this off. |
 
-**Survey email and page**
+**Survey email**
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Email subject | `How was your experience? Issue #%{issue_id}` | Placeholders: `%{issue_id}`, `%{issue_subject}`, `%{project}`. Use `%%` for a literal percent sign. |
+| Email subject | `How did we do? Request #{{issue_id}}` | Any [placeholder](#customising-the-survey-email) can be used. The 0.1.0 syntax (`%{issue_id}`, with `%%` for a percent sign) still works. |
 | Sender address | Redmine's *Emission email address* | `From:` address for survey emails. |
+| Company name | Redmine's *Application title* | Shown at the top of the email (when there is no logo) and in the default text. |
+| Logo URL | none | A public `https://` image, shown 40 pixels high. |
+| Brand colour | `#2f6fb5` | Colour of the top border and the company name. |
 | Rating prompt | `How was your experience with us?` | Heading in the email and on the survey page. |
 | Rating labels | Great / OK / Poor | Button labels. |
+| Introduction text | built-in text | Plain text with placeholders. Leave empty for the default. |
+| Footer text | built-in text | Plain text with placeholders. Leave empty for the default. |
+| Show the request details | on | Shows a box with the request number, subject, project and agent. |
+| Custom HTML / plain-text template | empty | Replaces the whole email. See [Customising the survey email](#customising-the-survey-email). |
+
+The **Preview email** and **Send a test email** buttons at the bottom of this
+section use the values in the form, including changes you haven't saved yet.
+
+**Survey page**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
 | Allow optional comments | on | Shows a comment box on the survey page. |
 | Submit the rating automatically | off | Submits the form with JavaScript as soon as the page opens. This saves the customer one click, but some security scanners run JavaScript and could submit false ratings. Leave it off unless you have checked this with your customers' mail systems. |
 | Hours the customer can change their answer | 24 | After this, the answer is locked. 0 locks it immediately. |
@@ -228,6 +244,9 @@ addresses and comments.
 
 ### Quick test
 
+To check the email design first, use **Preview email** or **Send a test
+email** on the settings page. Then run an end-to-end test:
+
 1. Create a test issue in an enabled project. Make yourself (with a test
    email address) the author with the customer role, or fill in the
    owner-email field.
@@ -236,6 +255,85 @@ addresses and comments.
    **Submit**.
 4. Open **Customer satisfaction** in the project menu and check that the
    answer appears.
+
+## Customising the survey email
+
+The built-in email has your company name or logo at the top, a greeting, a
+short introduction, a box with the request details, and three large buttons
+(Great, OK, Poor). The buttons sit side by side on a computer and stack on a
+phone. A plain-text version is always sent alongside the HTML. Emails are
+written in the customer's Redmine language, or in Redmine's default language
+for recipients who aren't Redmine users.
+
+There are three levels of customisation, all under **Administration →
+Plugins → Redmine CSAT → Configure → Survey email**.
+
+### 1. Simple settings
+
+Set the company name, logo URL, brand colour, prompt, button labels,
+introduction and footer. The introduction and footer are plain text: HTML tags
+are shown as typed, a blank line starts a new paragraph, and placeholders such
+as `{{customer_name}}` or `{{issue_subject}}` can be used.
+
+### 2. Custom templates
+
+Open **Custom templates (advanced)** and click **Insert the built-in
+template** to start from the default design. Then edit it. You can provide an
+HTML template, a plain-text template, or both. Any template left empty uses the
+built-in design.
+
+Rules:
+
+- Values go in with `{{placeholder}}` tags. They are HTML-escaped
+  automatically, so issue subjects and names can't break the layout or inject
+  HTML.
+- Templates are not ERB or Liquid. They can't run code or include logic.
+- A template **must** contain `{{rating_buttons}}`, or at least one of
+  `{{great_url}}`, `{{okay_url}}` and `{{poor_url}}`. Otherwise it is ignored,
+  the built-in template is used, and the preview shows a warning.
+- Unknown placeholders are left in the email as typed, and the preview lists
+  them.
+- Use inline styles and table layouts. Many email apps (Outlook, Gmail)
+  ignore `<style>` blocks and modern CSS.
+
+### 3. Preview and test
+
+- **Preview email** opens a new tab showing the email at desktop and mobile
+  widths with example data, plus the plain-text version and any template
+  warnings.
+- **Send a test email** sends the example email to your own address. The
+  rating buttons in a test email aren't connected to a real survey.
+
+Both use the values in the form, so you can try changes before saving them.
+
+### Placeholders
+
+| Placeholder | Value |
+| --- | --- |
+| `{{greeting}}` | "Hi *name*," or "Hello," when the name is unknown |
+| `{{customer_name}}` | Customer's name (empty for owner-email recipients) |
+| `{{issue_id}}`, `{{issue_subject}}`, `{{project}}`, `{{status}}` | Details of the rated issue |
+| `{{issue_url}}` | Link to the issue (only for customers who are Redmine users) |
+| `{{agent_name}}` | User who made the status change, or the assignee |
+| `{{company_name}}`, `{{logo_url}}`, `{{brand_color}}` | Design settings |
+| `{{prompt}}`, `{{great_label}}`, `{{okay_label}}`, `{{poor_label}}` | Prompt and button labels |
+| `{{great_url}}`, `{{okay_url}}`, `{{poor_url}}` | The three rating links |
+| `{{expiry_date}}`, `{{expiry_notice}}` | When the link expires (empty if links never expire) |
+| `{{subject}}`, `{{preheader}}`, `{{hint}}` | Email subject, inbox preview line, instruction under the buttons |
+| `{{intro}}`, `{{footer}}` | Introduction and footer as plain text |
+
+Ready-made blocks: in HTML templates they are inserted as HTML, in
+plain-text templates as text.
+
+| Block | Content |
+| --- | --- |
+| `{{header}}` | Logo, or the company name |
+| `{{intro_html}}`, `{{footer_html}}` | Introduction and footer as HTML paragraphs |
+| `{{issue_details}}` | Request details box (empty if turned off) |
+| `{{rating_buttons}}` | The three buttons (one link per line in plain text) |
+
+The built-in templates are in `config/email_templates/` if you want to read
+them outside Redmine.
 
 ## Who receives the survey
 
@@ -253,8 +351,9 @@ addresses and comments.
 The plugin never surveys every customer-role member of a project.
 
 Emails are sent in the recipient's Redmine language when they are a Redmine
-user, otherwise in Redmine's default language. The prompt and button labels
-always use the text from the settings.
+user, otherwise in Redmine's default language. Text you enter in the settings
+(prompt, labels, introduction, footer, templates) is used as typed, in every
+language.
 
 ## The project report
 
@@ -321,6 +420,14 @@ with `[redmine_csat]`. Then check that:
 - the address is not in its cooldown period;
 - Redmine can send email at all (**Administration → Settings → Email
   notifications → Send a test email**).
+
+**My custom template isn't used.** Open **Preview email**. If the template
+has no rating links, the warning at the top says so, and the built-in template
+is used instead.
+
+**The email looks different in Outlook or Gmail.** These apps ignore much
+modern CSS. Start from the built-in template, which uses tables and inline
+styles that work in them, and test with **Send a test email**.
 
 **Links in the email point to the wrong host.** Fix **Host name and path**
 and **Protocol** under **Administration → Settings → General**.

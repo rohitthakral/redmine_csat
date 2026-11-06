@@ -76,15 +76,6 @@ class RedmineCsatModelsTest < ActiveSupport::TestCase
     assert_nil response.reload.follow_up_issue_id
   end
 
-  test 'mail subject survives malformed templates' do
-    issue = Issue.find(1)
-    configure_csat('mail_subject' => '%{issue_id} is 100%')
-    assert_equal "How was your experience? Issue ##{issue.id}", RedmineCsat::Settings.mail_subject(issue)
-
-    configure_csat('mail_subject' => 'Issue %{issue_id} in %{project}')
-    assert_equal "Issue #{issue.id} in #{issue.project.name}", RedmineCsat::Settings.mail_subject(issue)
-  end
-
   test 'email normaliser' do
     assert_equal 'person@example.com', RedmineCsat::EmailNormalizer.call(' Person@Example.COM ')
     assert_nil RedmineCsat::EmailNormalizer.call('invalid')

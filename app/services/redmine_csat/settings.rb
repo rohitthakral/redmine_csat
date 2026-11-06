@@ -4,7 +4,9 @@ module RedmineCsat
   # Typed access to the plugin settings.
   class Settings
     DEFAULT_PROMPT = 'How was your experience with us?'
-    DEFAULT_SUBJECT = 'How was your experience? Issue #%{issue_id}'
+    DEFAULT_SUBJECT = 'How did we do? Request #{{issue_id}}'
+    DEFAULT_BRAND_COLOR = '#2f6fb5'
+    CUSTOM_TEMPLATE_LIMIT = 100_000
 
     DEFAULTS = {
       'enabled' => '1',
@@ -29,14 +31,41 @@ module RedmineCsat
       'follow_up_private' => '1',
       'mail_subject' => DEFAULT_SUBJECT,
       'from_address' => '',
+      'email_company_name' => '',
+      'email_logo_url' => '',
+      'email_brand_color' => DEFAULT_BRAND_COLOR,
+      'email_show_issue_details' => '1',
+      'email_intro' => '',
+      'email_footer' => '',
+      'email_custom_html' => '',
+      'email_custom_text' => '',
       'deliver_async' => '0',
       'ip_hash_retention_days' => '90',
       'data_retention_days' => '0'
     }.freeze
 
+    # Settings keys that affect the survey email, used by the email preview.
+    EMAIL_KEYS = %w[
+      rating_prompt poor_label okay_label great_label allow_comment mail_subject from_address
+      link_validity_days email_company_name email_logo_url email_brand_color
+      email_show_issue_details email_intro email_footer email_custom_html email_custom_text
+    ].freeze
+
     class << self
       def data
-        DEFAULTS.merge(Setting.plugin_redmine_csat.presence || {})
+        base = DEFAULTS.merge((Setting.plugin_redmine_csat.presence || {}).to_h.stringify_keys)
+        overrides = Thread.current[:redmine_csat_settings_overrides]
+        overrides ? base.merge(overrides) : base
+      end
+
+      # Temporarily replaces some settings for the current thread. Used to
+      # preview or test-send the email with values that are not saved yet.
+      def with_overrides(overrides)
+        previous = Thread.current[:redmine_csat_settings_overrides]
+        Thread.current[:redmine_csat_settings_overrides] = overrides.to_h.stringify_keys
+        yield
+      ensure
+        Thread.current[:redmine_csat_settings_overrides] = previous
       end
 
       def enabled? = truthy?(data['enabled'])
@@ -70,18 +99,35 @@ module RedmineCsat
 
       def from_address = data['from_address'].presence || Setting.mail_from
 
-      def mail_subject(issue)
-        format(data['mail_subject'].presence || DEFAULT_SUBJECT,
-               issue_id: issue.id, issue_subject: issue.subject, project: issue.project.name)
-      rescue KeyError, ArgumentError
-        "How was your experience? Issue ##{issue.id}"
+      def mail_subject_template = data['mail_subject'].presence || DEFAULT_SUBJECT
+      def email_company_name = data['email_company_name'].to_s.strip.presence
+      def email_show_issue_details? = truthy?(data['email_show_issue_details'])
+      def email_intro = data['email_intro'].to_s.strip.presence
+      def email_footer = data['email_footer'].to_s.strip.presence
+
+      def email_logo_url
+        url = data['email_logo_url'].to_s.strip
+        url.match?(%r{\Ahttps?://[^\s"'<>]+\z}i) ? url : nil
       end
+
+      def email_brand_color
+        color = data['email_brand_color'].to_s.strip
+        color.match?(/\A#\h{6}\z/) ? color : DEFAULT_BRAND_COLOR
+      end
+
+      def email_custom_html = custom_template(data['email_custom_html'])
+      def email_custom_text = custom_template(data['email_custom_text'])
 
       private
 
       def truthy?(value) = %w[1 true yes on].include?(value.to_s.downcase)
       def int(value) = value.to_i.positive? ? value.to_i : nil
       def non_negative(value) = [value.to_i, 0].max
+
+      def custom_template(value)
+        value = value.to_s.strip
+        value.presence if value.length <= CUSTOM_TEMPLATE_LIMIT
+      end
     end
   end
 end

@@ -70,3 +70,87 @@ en:
   field_csat_comment: Comment (optional)
   field_csat_responded_on: Responded
   field_csat_follow_up_issue: Follow-up
+
+  # Survey email
+  label_csat_settings_email: Survey email
+  label_csat_email_request: "Request #%{id}"
+  label_csat_custom_templates: Custom templates (advanced)
+  label_csat_placeholder: Placeholder
+  label_csat_plain_text: Plain text
+  label_csat_email_preview: Survey email preview
+  label_csat_preview_desktop: Desktop
+  label_csat_preview_mobile: Mobile
+  label_csat_send_test: Send test email
+  label_csat_test: Test
+  label_csat_template_in_use: Template in use
+  label_csat_template_builtin: Built-in
+  label_csat_template_custom: Custom
+  field_csat_email_company_name: Company name
+  field_csat_email_logo_url: Logo URL
+  field_csat_email_brand_color: Brand colour
+  field_csat_email_intro: Introduction text
+  field_csat_email_footer: Footer text
+  field_csat_email_show_issue_details: Show the request details
+  field_csat_email_custom_html: Custom HTML template
+  field_csat_email_custom_text: Custom plain-text template
+  button_csat_insert_default: Insert the built-in template
+  button_csat_preview_email: Preview email
+  button_csat_send_test: "Send a test email to %{email}"
+  text_csat_subject_info: "Placeholders such as {{issue_id}}, {{issue_subject}} and {{project}} can be used. See the list under Custom templates."
+  text_csat_logo_info: "Optional. A public https:// image, shown 40px high. Without a logo, the company name is shown."
+  text_csat_brand_color_info: Used for the top border and the company name. The rating buttons keep their own colours so they stay readable.
+  text_csat_intro_info: Plain text; HTML tags are shown as typed (use a custom template for HTML). Leave empty to use the default text shown. Placeholders can be used, and a blank line starts a new paragraph.
+  text_csat_custom_templates_info: "Replace the whole email with your own HTML and/or plain-text template. Leave a field empty to use the built-in design. Values are inserted with {{placeholder}} tags and are HTML-escaped automatically. A template must contain {{rating_buttons}} or the {{great_url}}, {{okay_url}} and {{poor_url}} links, otherwise the built-in template is used."
+  text_csat_preview_buttons_info: Uses the values in this form, including changes you have not saved yet. Opens in a new tab.
+  text_csat_replace_template_confirm: Replace the current template with the built-in one?
+  text_csat_preview_info: This preview uses example data and the values from the settings form. The rating buttons are disabled here.
+  text_csat_template_missing_links: "%{template} has no rating links ({{rating_buttons}}, {{great_url}}, {{okay_url}} or {{poor_url}}), so the built-in template is used instead."
+  text_csat_template_unknown_placeholders: "%{template} uses unknown placeholders, which will appear as typed: %{names}"
+  text_csat_test_sent: "A test email has been sent to %{email}."
+  text_csat_test_links_inactive: The rating buttons in a test email do not belong to a real survey and lead to a "not found" page.
+  text_csat_test_no_email: Your account has no email address.
+  text_csat_test_failed: "The test email could not be sent: %{message}"
+  text_csat_close_tab: You can close this tab and return to the settings page.
+  text_csat_greeting: Hello,
+  text_csat_greeting_named: "Hi %{name},"
+  text_csat_email_intro_default: "{{greeting}}\n\nThank you for contacting {{company_name}}. We recently resolved your request #{{issue_id}}, \"{{issue_subject}}\".\n\nWe'd love to know how we did. It only takes one click."
+  text_csat_email_footer_default: "This is a one-time survey about request #{{issue_id}}. {{expiry_notice}}\n{{company_name}}"
+  text_csat_email_hint: Choose the answer that best describes your experience.
+  text_csat_email_hint_comment: Choose an answer. You can add a comment on the next page if you like.
+  text_csat_email_preheader: "Tell us how we did with request #%{issue_id}. It takes one click."
+  text_csat_expiry_notice: "The survey link expires on %{date}."
+  text_csat_handled_by: "Handled by %{name}"
+  text_csat_sample_issue_subject: Unable to export the monthly report
+  text_csat_sample_project: Example project
+  text_csat_sample_agent: Alex from Support
+
+  text_csat_placeholder_greeting: "\"Hi <name>,\" or \"Hello,\" when the customer's name is unknown"
+  text_csat_placeholder_customer_name: Customer's name (empty for owner-email recipients)
+  text_csat_placeholder_issue_id: Issue number
+  text_csat_placeholder_issue_subject: Issue subject
+  text_csat_placeholder_issue_url: Link to the issue (empty unless the customer is a Redmine user)
+  text_csat_placeholder_project: Project name
+  text_csat_placeholder_status: Issue status, for example Closed
+  text_csat_placeholder_agent_name: User who made the status change, or the assignee
+  text_csat_placeholder_company_name: Company name setting, or Redmine's application title
+  text_csat_placeholder_prompt: Rating prompt setting
+  text_csat_placeholder_great_url: Link for the Great answer
+  text_csat_placeholder_okay_url: Link for the OK answer
+  text_csat_placeholder_poor_url: Link for the Poor answer
+  text_csat_placeholder_great_label: Great label setting
+  text_csat_placeholder_okay_label: OK label setting
+  text_csat_placeholder_poor_label: Poor label setting
+  text_csat_placeholder_expiry_date: Date the survey link expires (empty if links never expire)
+  text_csat_placeholder_expiry_notice: "\"The survey link expires on <date>.\" or empty"
+  text_csat_placeholder_subject: The email subject
+  text_csat_placeholder_preheader: Short summary shown by some email apps next to the subject
+  text_csat_placeholder_hint: Instruction shown under the buttons
+  text_csat_placeholder_intro: Introduction text, as plain text
+  text_csat_placeholder_footer: Footer text, as plain text
+  text_csat_placeholder_brand_color: "Brand colour, for example #2f6fb5"
+  text_csat_placeholder_logo_url: Logo URL (empty if not set)
+  text_csat_placeholder_header: "Block: logo, or the company name if there is no logo"
+  text_csat_placeholder_intro_html: "Block: introduction text as HTML paragraphs"
+  text_csat_placeholder_footer_html: "Block: footer text as HTML paragraphs"
+  text_csat_placeholder_issue_details: "Block: request number, subject, project and agent (empty if turned off)"
+  text_csat_placeholder_rating_buttons: "Block: the three rating buttons (in plain text, one link per line)"

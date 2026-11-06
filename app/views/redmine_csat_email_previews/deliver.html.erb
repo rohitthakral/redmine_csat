@@ -1,0 +1,11 @@
+<% html_title l(:label_csat_send_test) %>
+<h2><%= l(:label_csat_send_test) %></h2>
+
+<% if @error %>
+  <p class="flash error"><%= @error %></p>
+<% else %>
+  <p class="flash notice"><%= l(:text_csat_test_sent, email: @recipient) %></p>
+  <p><%= l(:text_csat_test_links_inactive) %></p>
+<% end %>
+
+<p><%= l(:text_csat_close_tab) %></p>

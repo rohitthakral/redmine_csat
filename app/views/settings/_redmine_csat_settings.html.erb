@@ -52,16 +52,30 @@
   </p>
 </fieldset>
 
-<fieldset class="box tabular">
-  <legend><%= l(:label_csat_settings_survey) %></legend>
+<fieldset class="box tabular" id="csat-email-settings">
+  <legend><%= l(:label_csat_settings_email) %></legend>
   <p>
     <%= label_tag 'settings_mail_subject', l(:field_csat_mail_subject) %>
     <%= text_field_tag 'settings[mail_subject]', csat_settings['mail_subject'], size: 70 %>
-    <em class="info">%{issue_id}, %{issue_subject}, %{project}</em>
+    <em class="info"><%= l(:text_csat_subject_info) %></em>
   </p>
   <p>
     <%= label_tag 'settings_from_address', l(:field_csat_from_address) %>
     <%= text_field_tag 'settings[from_address]', csat_settings['from_address'], size: 50, placeholder: Setting.mail_from %>
+  </p>
+  <p>
+    <%= label_tag 'settings_email_company_name', l(:field_csat_email_company_name) %>
+    <%= text_field_tag 'settings[email_company_name]', csat_settings['email_company_name'], size: 50, placeholder: Setting.app_title %>
+  </p>
+  <p>
+    <%= label_tag 'settings_email_logo_url', l(:field_csat_email_logo_url) %>
+    <%= url_field_tag 'settings[email_logo_url]', csat_settings['email_logo_url'], size: 70, placeholder: 'https://example.com/logo.png' %>
+    <em class="info"><%= l(:text_csat_logo_info) %></em>
+  </p>
+  <p>
+    <%= label_tag 'settings_email_brand_color', l(:field_csat_email_brand_color) %>
+    <%= color_field_tag 'settings[email_brand_color]', RedmineCsat::Settings.email_brand_color %>
+    <em class="info"><%= l(:text_csat_brand_color_info) %></em>
   </p>
   <p>
     <%= label_tag 'settings_rating_prompt', l(:field_csat_rating_prompt) %>
@@ -69,10 +83,61 @@
   </p>
   <p>
     <%= label_tag 'settings_great_label', l(:field_csat_labels) %>
-    <%= text_field_tag 'settings[great_label]', csat_settings['great_label'], size: 15 %>
-    <%= text_field_tag 'settings[okay_label]', csat_settings['okay_label'], size: 15 %>
-    <%= text_field_tag 'settings[poor_label]', csat_settings['poor_label'], size: 15 %>
+    <%= text_field_tag 'settings[great_label]', csat_settings['great_label'], size: 15, 'aria-label': l(:label_csat_rating_great) %>
+    <%= text_field_tag 'settings[okay_label]', csat_settings['okay_label'], size: 15, 'aria-label': l(:label_csat_rating_okay) %>
+    <%= text_field_tag 'settings[poor_label]', csat_settings['poor_label'], size: 15, 'aria-label': l(:label_csat_rating_poor) %>
   </p>
+  <p>
+    <%= label_tag 'settings_email_intro', l(:field_csat_email_intro) %>
+    <%= text_area_tag 'settings[email_intro]', csat_settings['email_intro'], rows: 6, class: 'csat-wide',
+                      placeholder: l(:text_csat_email_intro_default) %>
+    <em class="info"><%= l(:text_csat_intro_info) %></em>
+  </p>
+  <p>
+    <%= label_tag 'settings_email_footer', l(:field_csat_email_footer) %>
+    <%= text_area_tag 'settings[email_footer]', csat_settings['email_footer'], rows: 3, class: 'csat-wide',
+                      placeholder: l(:text_csat_email_footer_default) %>
+  </p>
+  <p>
+    <%= label_tag 'settings_email_show_issue_details', l(:field_csat_email_show_issue_details) %><%= checkbox.call('email_show_issue_details') %>
+  </p>
+
+  <details class="csat-advanced" <%= 'open' if csat_settings['email_custom_html'].present? || csat_settings['email_custom_text'].present? %>>
+    <summary><strong><%= l(:label_csat_custom_templates) %></strong></summary>
+    <p class="info"><%= l(:text_csat_custom_templates_info) %></p>
+    <p>
+      <%= label_tag 'settings_email_custom_html', l(:field_csat_email_custom_html) %>
+      <%= text_area_tag 'settings[email_custom_html]', csat_settings['email_custom_html'], rows: 18,
+                        class: 'csat-wide csat-code', spellcheck: false %>
+      <button type="button" class="csat-insert-default" data-target="settings_email_custom_html"
+              data-template="<%= RedmineCsat::SurveyEmail.default_html_template %>"><%= l(:button_csat_insert_default) %></button>
+    </p>
+    <p>
+      <%= label_tag 'settings_email_custom_text', l(:field_csat_email_custom_text) %>
+      <%= text_area_tag 'settings[email_custom_text]', csat_settings['email_custom_text'], rows: 10,
+                        class: 'csat-wide csat-code', spellcheck: false %>
+      <button type="button" class="csat-insert-default" data-target="settings_email_custom_text"
+              data-template="<%= RedmineCsat::SurveyEmail.default_text_template %>"><%= l(:button_csat_insert_default) %></button>
+    </p>
+    <table class="list csat-placeholders">
+      <thead><tr><th><%= l(:label_csat_placeholder) %></th><th><%= l(:field_description) %></th></tr></thead>
+      <tbody>
+        <% (RedmineCsat::SurveyEmail::PLACEHOLDERS + RedmineCsat::SurveyEmail::BLOCKS).each do |name| %>
+          <tr><td><code>{{<%= name %>}}</code></td><td><%= l("text_csat_placeholder_#{name}") %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </details>
+
+  <p class="csat-email-actions">
+    <button type="submit" formaction="<%= redmine_csat_email_preview_path %>" formmethod="post" formtarget="_blank"><%= l(:button_csat_preview_email) %></button>
+    <button type="submit" formaction="<%= redmine_csat_email_test_path %>" formmethod="post" formtarget="_blank"><%= l(:button_csat_send_test, email: User.current.mail) %></button>
+    <em class="info"><%= l(:text_csat_preview_buttons_info) %></em>
+  </p>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%= l(:label_csat_settings_survey) %></legend>
   <p><%= label_tag 'settings_allow_comment', l(:field_csat_allow_comment) %><%= checkbox.call('allow_comment') %></p>
   <p>
     <%= label_tag 'settings_auto_submit_vote', l(:field_csat_auto_submit_vote) %><%= checkbox.call('auto_submit_vote') %>
@@ -133,3 +198,22 @@
     <em class="info"><%= l(:text_csat_retention_info) %></em>
   </p>
 </fieldset>
+
+<style>
+  #csat-email-settings .csat-wide { width: 95%; max-width: 60em; box-sizing: border-box; }
+  #csat-email-settings .csat-code { font-family: monospace; font-size: 12px; }
+  #csat-email-settings .csat-advanced { margin: 12px 0; }
+  #csat-email-settings .csat-advanced summary { cursor: pointer; padding: 6px 0; }
+  #csat-email-settings .csat-placeholders { max-width: 60em; margin: 8px 0 12px; }
+  #csat-email-settings .csat-placeholders td { text-align: left; }
+  #csat-email-settings .csat-email-actions { padding-left: 0; }
+</style>
+<%= javascript_tag do %>
+  document.addEventListener('click', function(event) {
+    var button = event.target.closest('.csat-insert-default');
+    if (!button) return;
+    var field = document.getElementById(button.dataset.target);
+    if (field.value.trim() !== '' && !confirm(<%= raw l(:text_csat_replace_template_confirm).to_json %>)) return;
+    field.value = button.dataset.template;
+  });
+<% end %>

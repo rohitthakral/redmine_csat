@@ -1,0 +1,12 @@
+{{prompt}}
+
+{{intro}}
+
+{{issue_details}}
+
+{{rating_buttons}}
+
+{{hint}}
+
+--
+{{footer}}
