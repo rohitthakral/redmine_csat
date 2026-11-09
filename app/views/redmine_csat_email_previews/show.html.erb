@@ -1,0 +1,44 @@
+<% html_title l(:label_csat_email_preview) %>
+<% content_for :header_tags do %>
+<style>
+  .csat-preview-frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .csat-preview-frames figure { margin: 0; }
+  .csat-preview-frames figcaption { font-weight: bold; margin-bottom: 6px; }
+  .csat-preview-frames iframe { border: 1px solid #ccc; background: #f3f4f6; height: 820px; }
+  .csat-preview-desktop { width: 640px; max-width: 100%; }
+  .csat-preview-mobile { width: 375px; max-width: 100%; }
+  .csat-preview-text { white-space: pre-wrap; background: #fff; border: 1px solid #ccc; padding: 12px; max-width: 640px; }
+</style>
+<% end %>
+
+<h2><%= l(:label_csat_email_preview) %></h2>
+
+<p class="info"><%= l(:text_csat_preview_info) %></p>
+
+<% @warnings.each do |warning| %>
+  <p class="warning"><%= warning %></p>
+<% end %>
+
+<div class="box tabular">
+  <p><label><%= l(:field_csat_from_address) %></label><%= @from %></p>
+  <p><label><%= l(:field_csat_mail_subject) %></label><strong><%= @subject %></strong></p>
+  <p>
+    <label><%= l(:label_csat_template_in_use) %></label>
+    <%= @custom_html ? l(:label_csat_template_custom) : l(:label_csat_template_builtin) %> (HTML),
+    <%= @custom_text ? l(:label_csat_template_custom) : l(:label_csat_template_builtin) %> (<%= l(:label_csat_plain_text) %>)
+  </p>
+</div>
+
+<div class="csat-preview-frames">
+  <figure>
+    <figcaption><%= l(:label_csat_preview_desktop) %></figcaption>
+    <iframe class="csat-preview-desktop" sandbox="" srcdoc="<%= @html %>" title="<%= l(:label_csat_preview_desktop) %>"></iframe>
+  </figure>
+  <figure>
+    <figcaption><%= l(:label_csat_preview_mobile) %></figcaption>
+    <iframe class="csat-preview-mobile" sandbox="" srcdoc="<%= @html %>" title="<%= l(:label_csat_preview_mobile) %>"></iframe>
+  </figure>
+</div>
+
+<h3><%= l(:label_csat_plain_text) %></h3>
+<div class="csat-preview-text"><%= @text %></div>

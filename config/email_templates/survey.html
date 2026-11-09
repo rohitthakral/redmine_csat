@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>{{subject}}</title>
+<style>
+  @media only screen and (max-width: 520px) {
+    .csat-container { width: 100% !important; }
+    .csat-pad { padding-left: 20px !important; padding-right: 20px !important; }
+    .csat-choice { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#f3f4f6; -webkit-text-size-adjust:100%;">
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">{{preheader}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" class="csat-container" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px; max-width:560px; background-color:#ffffff; border-radius:8px; border-top:4px solid {{brand_color}};">
+        <tr>
+          <td class="csat-pad" style="padding:24px 32px 0 32px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            {{header}}
+          </td>
+        </tr>
+        <tr>
+          <td class="csat-pad" style="padding:16px 32px 0 32px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#1f2937;">
+            <h1 style="margin:0 0 16px 0; font-size:22px; line-height:30px; font-weight:600; color:#111827;">{{prompt}}</h1>
+            {{intro_html}}
+          </td>
+        </tr>
+        <tr>
+          <td class="csat-pad" style="padding:8px 32px 0 32px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            {{issue_details}}
+          </td>
+        </tr>
+        <tr>
+          <td class="csat-pad" style="padding:24px 32px 8px 32px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            {{rating_buttons}}
+          </td>
+        </tr>
+        <tr>
+          <td class="csat-pad" style="padding:0 32px 24px 32px; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:20px; color:#4b5563;">
+            {{hint}}
+          </td>
+        </tr>
+        <tr>
+          <td class="csat-pad" style="padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb; font-family:-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#6b7280;">
+            {{footer_html}}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
